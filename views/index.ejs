@@ -1,24 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CodeChef Rating Lookup</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
-
   <main class="container">
 
-    <!-- HEADER -->
     <h1>⚡ CodeChef Rating Lookup</h1>
 
     <!-- FORM -->
-    <form action="/lookup" method="POST" id="lookupForm">
+    <form action="/lookup" method="POST">
       <textarea name="usernames" rows="4" placeholder="Enter usernames..."><%= usernames %></textarea>
-      <button type="submit" id="lookupBtn" class="btn-primary">Lookup</button>
+      <button type="submit" class="btn-primary">Lookup</button>
     </form>
 
     <% if (error) { %>
@@ -29,6 +25,9 @@
 
     <!-- FILTERS -->
     <div class="filters">
+      <input type="text" id="searchUser" placeholder="Search username...">
+      <input type="text" id="searchContest" placeholder="Search contest...">
+
       <select id="sortBy">
         <option value="">Sort By</option>
         <option value="rating">Rating</option>
@@ -40,14 +39,8 @@
         <option value="desc">Descending</option>
         <option value="asc">Ascending</option>
       </select>
-
-      <select id="changeFilter">
-        <option value="">All</option>
-        <option value="positive">Increase</option>
-        <option value="negative">Decrease</option>
-      </select>
-
-      <button onclick="applyFilters()" type="button">Apply</button>
+      <button type="button" onclick="applyFilters()">Apply</button>
+      <button type="button" onclick="resetFilters()">Reset</button>
     </div>
 
     <!-- TABLE -->
@@ -68,33 +61,12 @@
         <% results.forEach((user, index) => { %>
         <tr>
           <td><%= index + 1 %></td>
-
-          <td>
-            <%= user.username %>
-            <% if (user.stars) { %>
-              <span><%= user.stars %></span>
-            <% } %>
-          </td>
-
-          <td class="cell-rating">
-            <%= user.rating %>
-          </td>
-
-          <td class="cell-rank">
-            <%= user.globalRank %>
-          </td>
-
-          <td class="cell-rank">
-            <%= user.countryRank %>
-          </td>
-
-          <td>
-            <%= user.lastContest %>
-          </td>
-
-          <td class="cell-change">
-            <%= user.ratingChange %>
-          </td>
+          <td><%= user.username %></td>
+          <td class="cell-rating"><%= user.rating %></td>
+          <td class="cell-rank"><%= user.globalRank %></td>
+          <td class="cell-rank"><%= user.countryRank %></td>
+          <td><%= user.lastContest %></td>
+          <td class="cell-change"><%= user.ratingChange %></td>
         </tr>
         <% }) %>
       </tbody>
@@ -102,12 +74,10 @@
 
     <% } %>
 
-
-
   </main>
-<footer style="text-align: center; padding: 10px; background: #222; color: white;">
-  Developed By PurnaKunche
-</footer>
+
+  <footer>Developed by PurnaKunche</footer>
+
   <script>
     function getNumber(text) {
       return parseInt(text.replace(/[^\d-]/g, "")) || 0;
@@ -118,20 +88,26 @@
       const order = document.getElementById("order").value;
       const changeFilter = document.getElementById("changeFilter").value;
 
+      const searchUser = document.getElementById("searchUser").value.toLowerCase();
+      const searchContest = document.getElementById("searchContest").value.toLowerCase();
+
       const table = document.getElementById("tableBody");
       let rows = Array.from(table.querySelectorAll("tr"));
 
-      // FILTER
-      if (changeFilter) {
-        rows = rows.filter(row => {
-          const change = row.querySelector(".cell-change").innerText.trim();
-          if (changeFilter === "positive") return change.includes("+");
-          if (changeFilter === "negative") return change.includes("-");
-          return true;
-        });
-      }
+      rows = rows.filter(row => {
+        const username = row.children[1].innerText.toLowerCase();
+        const contest = row.children[5].innerText.toLowerCase();
+        const change = row.querySelector(".cell-change").innerText;
 
-      // SORT
+        if (searchUser && !username.includes(searchUser)) return false;
+        if (searchContest && !contest.includes(searchContest)) return false;
+
+        if (changeFilter === "positive" && !change.includes("+")) return false;
+        if (changeFilter === "negative" && !change.includes("-")) return false;
+
+        return true;
+      });
+
       rows.sort((a, b) => {
         let valA = 0, valB = 0;
 
@@ -153,9 +129,27 @@
         return order === "asc" ? valA - valB : valB - valA;
       });
 
-      // RE-RENDER
       table.innerHTML = "";
-      rows.forEach(row => table.appendChild(row));
+      rows.forEach((row, index) => {
+        row.children[0].innerText = index + 1;
+        table.appendChild(row);
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById("sortBy").value = "";
+      document.getElementById("order").value = "desc";
+      document.getElementById("changeFilter").value = "";
+      document.getElementById("searchUser").value = "";
+      document.getElementById("searchContest").value = "";
+
+      const table = document.getElementById("tableBody");
+      const rows = Array.from(table.querySelectorAll("tr"));
+
+      rows.forEach((row, index) => {
+        row.style.display = "";
+        row.children[0].innerText = index + 1;
+      });
     }
   </script>
 
