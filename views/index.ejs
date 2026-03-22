@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeChef Rating Lookup</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+  <main class="container">
+
+    <!-- HEADER -->
+    <h1>⚡ CodeChef Rating Lookup</h1>
+
+    <!-- FORM -->
+    <form action="/lookup" method="POST" id="lookupForm">
+      <textarea name="usernames" rows="4" placeholder="Enter usernames..."><%= usernames %></textarea>
+      <button type="submit" id="lookupBtn" class="btn-primary">Lookup</button>
+    </form>
+
+    <% if (error) { %>
+      <p style="color:red;"><%= error %></p>
+    <% } %>
+
+    <% if (results && results.length > 0) { %>
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <select id="sortBy">
+        <option value="">Sort By</option>
+        <option value="rating">Rating</option>
+        <option value="rank">Global Rank</option>
+        <option value="change">Rating Change</option>
+      </select>
+
+      <select id="order">
+        <option value="desc">Descending</option>
+        <option value="asc">Ascending</option>
+      </select>
+
+      <select id="changeFilter">
+        <option value="">All</option>
+        <option value="positive">Increase</option>
+        <option value="negative">Decrease</option>
+      </select>
+
+      <button onclick="applyFilters()" type="button">Apply</button>
+    </div>
+
+    <!-- TABLE -->
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Rating</th>
+          <th>Global Rank</th>
+          <th>Country Rank</th>
+          <th>Last Contest</th>
+          <th>Change</th>
+        </tr>
+      </thead>
+
+      <tbody id="tableBody">
+        <% results.forEach((user, index) => { %>
+        <tr>
+          <td><%= index + 1 %></td>
+
+          <td>
+            <%= user.username %>
+            <% if (user.stars) { %>
+              <span><%= user.stars %></span>
+            <% } %>
+          </td>
+
+          <td class="cell-rating">
+            <%= user.rating %>
+          </td>
+
+          <td class="cell-rank">
+            <%= user.globalRank %>
+          </td>
+
+          <td class="cell-rank">
+            <%= user.countryRank %>
+          </td>
+
+          <td>
+            <%= user.lastContest %>
+          </td>
+
+          <td class="cell-change">
+            <%= user.ratingChange %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <% } %>
+
+  </main>
+
+  <script>
+    function getNumber(text) {
+      return parseInt(text.replace(/[^\d-]/g, "")) || 0;
+    }
+
+    function applyFilters() {
+      const sortBy = document.getElementById("sortBy").value;
+      const order = document.getElementById("order").value;
+      const changeFilter = document.getElementById("changeFilter").value;
+
+      const table = document.getElementById("tableBody");
+      let rows = Array.from(table.querySelectorAll("tr"));
+
+      // FILTER
+      if (changeFilter) {
+        rows = rows.filter(row => {
+          const change = row.querySelector(".cell-change").innerText.trim();
+          if (changeFilter === "positive") return change.includes("+");
+          if (changeFilter === "negative") return change.includes("-");
+          return true;
+        });
+      }
+
+      // SORT
+      rows.sort((a, b) => {
+        let valA = 0, valB = 0;
+
+        if (sortBy === "rating") {
+          valA = getNumber(a.querySelector(".cell-rating").innerText);
+          valB = getNumber(b.querySelector(".cell-rating").innerText);
+        }
+
+        if (sortBy === "rank") {
+          valA = getNumber(a.querySelectorAll(".cell-rank")[0].innerText) || Infinity;
+          valB = getNumber(b.querySelectorAll(".cell-rank")[0].innerText) || Infinity;
+        }
+
+        if (sortBy === "change") {
+          valA = getNumber(a.querySelector(".cell-change").innerText);
+          valB = getNumber(b.querySelector(".cell-change").innerText);
+        }
+
+        return order === "asc" ? valA - valB : valB - valA;
+      });
+
+      // RE-RENDER
+      table.innerHTML = "";
+      rows.forEach(row => table.appendChild(row));
+    }
+  </script>
+
+</body>
+</html>
